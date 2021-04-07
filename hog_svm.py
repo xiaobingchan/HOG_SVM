@@ -17,17 +17,17 @@ label_map = {1: 'cat',
              3: 'snack',
              }
 # 训练集图片的位置
-train_image_path = 'image128'
+train_image_path = 'image'
 # 测试集图片的位置
-test_image_path = 'image128'
+test_image_path = 'image'
 
 # 训练集标签的位置
-train_label_path = os.path.join('image128','train.txt')
+train_label_path = os.path.join('image','train.txt')
 # 测试集标签的位置
-test_label_path = os.path.join('image128','train.txt')
+test_label_path = os.path.join('image','train.txt')
 
-image_height = 128
-image_width = 100
+image_height = 200
+image_width = 200
 
 train_feat_path = 'train/'
 test_feat_path = 'test/'
@@ -51,11 +51,13 @@ def get_feat(image_list, name_list, label_list, savePath):
     for image in image_list:
         try:
             # 如果是灰度图片  把3改为-1
-            image = np.reshape(image, (image_height, image_width, 3))
+            image = np.reshape(image, (image_height, image_width, -1))
         except:
             print('发送了异常，图片大小size不满足要求：',name_list[i])
             continue
-        gray = rgb2gray(image) / 255.0
+        #gray = rgb2gray(image) / 255.0
+        # 如果直接就是灰度图
+        gray = image
         # 这句话根据你的尺寸改改
         fd = hog(gray, orientations=12,block_norm='L1', pixels_per_cell=[8, 8], cells_per_block=[4, 4], visualize=False,
                  transform_sqrt=True)
@@ -120,15 +122,15 @@ def train_and_test():
         data = joblib.load(feat_path)
         features.append(data[:-1])
         labels.append(data[-1])
-    print("Training a Linear LinearSVM Classifier.")
-    clf = LinearSVC()
-    clf.fit(features, labels)
+    #print("Training a Linear LinearSVM Classifier.")
+    #clf = LinearSVC()
+    #clf.fit(features, labels)
     # 下面的代码是保存模型的
-    if not os.path.exists(model_path):
-        os.makedirs(model_path)
-    joblib.dump(clf, model_path + 'model')
+    # if not os.path.exists(model_path):
+    #     os.makedirs(model_path)
+    # joblib.dump(clf, model_path + 'model')
     # 下面的代码是加载模型  可以注释上面的代码   直接进行加载模型  不进行训练
-    # clf = joblib.load(model_path+'model')
+    clf = joblib.load(model_path+'model')
     print("训练之后的模型存放在model文件夹中")
     # exit()
     result_list = []
@@ -142,7 +144,8 @@ def train_and_test():
         data_test = joblib.load(feat_path)
         data_test_feat = data_test[:-1].reshape((1, -1)).astype(np.float64)
         result = clf.predict(data_test_feat)
-        result_list.append(image_name + ' ' + label_map[int(result[0])] + '\n')
+        print(result)
+        result_list.append(image_name + ' ' + str(result[0]) + '\n')
         if int(result[0]) == int(data_test[-1]):
             correct_number += 1
     write_to_txt(result_list)
@@ -170,7 +173,7 @@ if __name__ == '__main__':
     #     test_label_path = input('请输入测试集合标签的位置,如 /home/icelee/test.txt\n')
     #     size = int(input('请输入您图片的大小：如64x64，则输入64\n'))
     if sys.version_info < (3,):
-        need_extra_feat = raw_input('是否需要重新获取特征？y/n\n')
+        need_extra_feat = input('是否需要重新获取特征？y/n\n')
     else:
         need_extra_feat = input('是否需要重新获取特征？y/n\n')
 
@@ -178,6 +181,6 @@ if __name__ == '__main__':
         shutil.rmtree(train_feat_path)
         shutil.rmtree(test_feat_path)
         mkdir()
-        extra_feat()  # 获取特征并保存在文件夹
+        extra_feat()
 
-    train_and_test()  # 训练并预测
+    train_and_test()
